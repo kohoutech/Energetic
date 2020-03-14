@@ -22,12 +22,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using OrigASM.Parse;
+using OrigASM.Assemble;
+using Origami.Asm32;
+using Origami.Win32;
+
 namespace OrigASM
 {
-    class Program
+    class OrigASM
     {
         static void Main(string[] args)
         {
+            Options options = new Options(args);                    //parse the cmd line args
+
+            //temporary debugging shortcut
+            String srcname = args[0];
+            String outname = args[1];
+
+            Parser parser = new Parser();
+            Assembler assembler = new Assembler();
+            List<Instruction> insns = parser.parseFile(srcname);
+            Win32Obj objfile = assembler.Assemble(insns);
+            objfile.WriteOut(outname);
         }
     }
 }
