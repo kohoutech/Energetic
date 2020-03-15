@@ -27,82 +27,94 @@ namespace OrigASM.Scan
 {
     class Scanner
     {
+        public iFeedback master;
+        
         public string filename;
         String source;
         int srcpos;
 
 
-        public Scanner(String _filename)
+        public Scanner(iFeedback _master, String _filename)
         {
+            master = _master;
             filename = _filename;
 
             try
             {
                 source = File.ReadAllText(filename);        //read entire file as single string
+                transformSource();
+
+                srcpos = 0;
             }
             catch (Exception e)
             {
-                //parser.fatal("error reading source file " + filename + " : " + e.Message);
+                master.fatal("error reading source file " + filename + " : " + e.Message);
             }
         }
 
+        public void transformSource()
+        {
+            if (!source.EndsWith("\n"))
+            {
+                source = source + '\n';                 //add eoln at end of file if not already there
+            }
+            source = source + '\0';                     //mark end of file
+        }
+
+        //- skipping whitespace & comments  -----------------------------------
+        
         public bool isSpace(char ch)
         {
-            return (ch == ' ' || ch == '\t' || ch == '\v' || ch == '\f' || ch == '\r');
+            return (ch == ' ' || ch == '\t' || ch == '\v' || ch == '\f');
         }
 
         public void skipWhitespace()
         {
-            bool done = false;
-            char ch = source[srcpos];
-            while (!done)
+            char ch = source[++srcpos];
+            while (isSpace(ch))
             {
-                //skip any whitespace
-                if ((ch == ' ') || (ch == '\t') || (ch == '\f') || (ch == '\v') || (ch == '\r'))
-                {
-                    ch = source[++srcpos];
-                    continue;
-                }
-
-                //skip any following comments, if we found a comment, then we're not done yet
-                if (ch == ';')
-                {
-                    skipComment();
-                    ch = source[++srcpos];
-                    continue;
-                }
-
-                //if we've gotten to here, then we not at a space or comment & we're done
-                done = true;
+                ch = source[++srcpos];
             };
         }
 
-        public void skipComment()
+        //skips comments chars & eoln, leaves source pos at start of next line or at eof char
+        public void skipLineComment()
         {
             char ch = source[++srcpos];
             while (ch != '\n' && ch != '\0')
             {
                 ch = source[++srcpos];
             }
+            if (ch == '\n')
+            {
+                srcpos++;               //skip eoln char
+            }
         }
 
-        public bool isAlpha(char ch)
+        //should we allow block comments /* ... */?
+        //convenient to comment out large blocks of text, but goes against the "one instruction per line" assembler style
+        //maybe in a future version?
+
+        //- source scanning ------------------------------------------------
+
+        public bool startsIdent(char ch)
         {
-            return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_');
+            return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_' || ch == '.');
         }
 
-        public bool isAlphaNum(char ch)
+        public bool isIdentChar(char ch)
         {
-            return isAlpha(ch) || isDigit(ch);
+            return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_' || isDigit(ch));
         }
 
         public string scanIdentifier()
         {
-            String idstr = "";
-            char ch = source[srcpos];
-            while (isAlphaNum(ch))
+            String idstr = "" + Char.ToUpper(source[srcpos]);         //store first char
+
+            char ch = source[++srcpos];
+            while (isIdentChar(ch))
             {
-                idstr = idstr + ch;
+                idstr = idstr + Char.ToUpper(ch);       //case-insensitive
                 ch = source[++srcpos];
             }
             return idstr;
@@ -113,9 +125,15 @@ namespace OrigASM.Scan
             return (ch >= '0' && ch <= '9');
         }
 
+        //just doing integers for now
+        //numberic formats:
+        //ddd   - decimal int (not starting with '0')
+        //0xddd - hexidecimal int
+        //0ddd  - octal int
+        //0bddd - binary int
         public string scanNumber()     
         {
-            int bass = 10;              //default number base
+            int bass = 10;              //default number base ("base" is a reserved C# word, hence "bass")
             char ch = source[srcpos];
             String numstr = "" + ch;
 
@@ -127,6 +145,12 @@ namespace OrigASM.Scan
                     numstr += source[++srcpos];
                     srcpos++;
                 }
+                else if ((source[srcpos + 1] == 'B' || source[srcpos + 1] == 'b'))
+                {
+                    bass = 2;
+                    numstr += source[++srcpos];
+                    srcpos++;
+                }
                 else
                 {
                     bass = 8;
@@ -134,8 +158,9 @@ namespace OrigASM.Scan
             }
             ch = source[++srcpos];
             while (((bass == 10) && (ch >= '0' && ch <= '9')) ||
-                    ((bass == 8) && (ch >= '0' && ch <= '7')) ||
-                    ((bass == 16) && ((ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f'))))
+                   ((bass == 2)  && (ch == '0' || ch == '1')) ||
+                   ((bass == 8)  && (ch >= '0' && ch <= '7')) ||
+                   ((bass == 16) && ((ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f'))))
             {
                 numstr = numstr + ch;
                 ch = source[++srcpos];
@@ -194,80 +219,78 @@ namespace OrigASM.Scan
             return sstr;
         }
 
+        //- main scanning method ----------------------------------------------
+
         public Fragment getFrag()
         {
             Fragment frag = null;
 
             char ch = source[srcpos];
-            while (true)
-            {
+                //whitespace
                 if (isSpace(ch))
                 {
                     skipWhitespace();
                     frag = new Fragment(FragType.SPACE, " ");
-                    break;
                 }
 
-                //line comment
-                if (ch == ';')
+                //line comment - effectively the end of line
+                else if (ch == ';')
                 {
-                    skipComment();
-                    ch = ' ';                   //replace comment with single space
-                    continue;
+                    skipLineComment();
+                    frag = new Fragment(FragType.EOLN, "<eoln>");
                 }
 
                 //identifier
-                if (isAlpha(ch))
+                else if (startsIdent(ch))
                 {
                     string idstr = scanIdentifier();
                     frag = new Fragment(FragType.WORD, idstr);
-                    break;
                 }
 
                 //numeric constant
-                if (isDigit(ch))
+                else if (isDigit(ch))
                 {
                     string numstr = scanNumber();
                     frag = new Fragment(FragType.NUMBER, numstr);
-                    break;
                 }
 
                 //char constant
-                if (ch == '\'')
+                else if (ch == '\'')
                 {
                     string chstr = scanCharConst();
                     frag = new Fragment(FragType.CHAR, chstr);
-                    break;
                 }
 
                 //string constant
-                if (ch == '"')
+                else if (ch == '"')
                 {
                     string sstr = scanStringConst();
                     frag = new Fragment(FragType.STRING, sstr);
-                    break;
                 }
 
                 //end of line - does not include eolns in spliced lines
-                if (ch == '\n')
+                else if ((ch == '\n') || (ch == '\r' && (source[srcpos + 1] == '\n')))
                 {
                     frag = new Fragment(FragType.EOLN, "<eoln>");
+                    if (ch == '\r')
+                    {
+                        srcpos++;
+                    }
                     srcpos++;
-                    break;
                 }
 
                 //end of file - check if this isn't a stray 0x0 char in file, if so pass it on as punctuation
-                if ((ch == '\0') && (srcpos == (source.Length - 1)))
+                else if ((ch == '\0') && (srcpos == (source.Length - 1)))
                 {
                     frag = new Fragment(FragType.EOF, "<eof>");
-                    break;
                 }
 
                 //anything else is punctuation
-                frag = new Fragment(FragType.PUNCT, "" + ch);
-                srcpos++;
-                break;
-            }
+                else
+                {
+                    frag = new Fragment(FragType.PUNCT, "" + ch);
+                    srcpos++;
+                }            
 
             return frag;
         }

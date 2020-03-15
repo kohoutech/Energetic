@@ -29,9 +29,19 @@ using Origami.Win32;
 
 namespace OrigASM
 {
-    class OrigASM
+    public class OrigASM : iFeedback
     {
         static void Main(string[] args)
+        {
+            OrigASM origASM = new OrigASM();
+            origASM.assembleIt(args);
+        }
+
+        public OrigASM()
+        {
+        }
+
+        public void assembleIt(string[] args)
         {
             Options options = new Options(args);                    //parse the cmd line args
 
@@ -39,11 +49,29 @@ namespace OrigASM
             String srcname = args[0];
             String outname = args[1];
 
-            Parser parser = new Parser();
-            Assembler assembler = new Assembler();
+            Parser parser = new Parser(this);
+            Assembler assembler = new Assembler(this);
             List<Instruction> insns = parser.parseFile(srcname);
-            Win32Obj objfile = assembler.Assemble(insns);
+            Win32Obj objfile = assembler.assemble(insns);
             objfile.WriteOut(outname);
+        }
+
+        //- assembler feedback ------------------------------------------------
+
+        public void fatal(String msg)
+        {
+        }
+
+        public void error(String msg)
+        {
+        }
+
+        public void warning(String msg)
+        {
+        }
+
+        public void info(String msg)
+        {
         }
     }
 }

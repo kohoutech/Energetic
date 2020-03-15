@@ -57,6 +57,7 @@
     <Compile Include="ASM32\Register.cs" />
     <Compile Include="ASM32\Symbol.cs" />
     <Compile Include="Assemble\Assembler.cs" />
+    <Compile Include="iFeedback.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Parse\Parser.cs" />
     <Compile Include="OrigASM.cs" />

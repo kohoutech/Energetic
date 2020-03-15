@@ -22,24 +22,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace OrigASM.Scan
+namespace OrigASM
 {
-    class Preprocessor
+    public interface iFeedback
     {
-        public iFeedback master;
-        public Scanner scan;
+        void fatal(String msg);        
 
-        public Preprocessor(iFeedback _master, string filename)
-        {
-            master = _master;
-            scan = new Scanner(master, filename);           //open main source file
-        }
+        void error(String msg);
+        
+        void warning(String msg);
 
-        //not handling preprocessing yet - just pass through for now
-        public Fragment getFrag()
-        {
-            Fragment frag = scan.getFrag();
-            return frag;
-        }
+        void info(String msg);
     }
 }

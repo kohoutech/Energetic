@@ -29,7 +29,14 @@ namespace OrigASM.Assemble
 {
     class Assembler
     {
-        public Win32Obj Assemble(List<Instruction> insns)
+        public iFeedback master;
+
+        public Assembler(iFeedback _master)
+        {
+            master = _master;
+        }
+
+        public Win32Obj assemble(List<Instruction> insns)
         {
             throw new NotImplementedException();
         }

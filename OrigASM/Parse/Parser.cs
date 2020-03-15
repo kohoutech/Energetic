@@ -29,19 +29,26 @@ namespace OrigASM.Parse
 {
     class Parser
     {
+        public iFeedback master;
         public Tokenizer prep;
 
         public String filename;
 
+        public Parser(iFeedback _master)
+        {
+            master = _master;
+        }
+
         public List<Instruction> parseFile(string _filename)
         {
             filename = _filename;
-            prep = new Tokenizer(filename);
+            prep = new Tokenizer(master, filename);
 
             Token token = prep.getToken();
             while (token.type != TokenType.EOF)
             {
                 token = prep.getToken();
+                Console.WriteLine(token.ToString());
             }
 
             List<Instruction> insns = new List<Instruction>();
@@ -49,3 +56,5 @@ namespace OrigASM.Parse
         }
     }
 }
+
+//Console.WriteLine("There's no sun in the shadow of the wizard");
