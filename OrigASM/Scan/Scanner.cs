@@ -46,6 +46,154 @@ namespace OrigASM.Scan
             }
         }
 
+        public bool isSpace(char ch)
+        {
+            return (ch == ' ' || ch == '\t' || ch == '\v' || ch == '\f' || ch == '\r');
+        }
+
+        public void skipWhitespace()
+        {
+            bool done = false;
+            char ch = source[srcpos];
+            while (!done)
+            {
+                //skip any whitespace
+                if ((ch == ' ') || (ch == '\t') || (ch == '\f') || (ch == '\v') || (ch == '\r'))
+                {
+                    ch = source[++srcpos];
+                    continue;
+                }
+
+                //skip any following comments, if we found a comment, then we're not done yet
+                if (ch == ';')
+                {
+                    skipComment();
+                    ch = source[++srcpos];
+                    continue;
+                }
+
+                //if we've gotten to here, then we not at a space or comment & we're done
+                done = true;
+            };
+        }
+
+        public void skipComment()
+        {
+            char ch = source[++srcpos];
+            while (ch != '\n' && ch != '\0')
+            {
+                ch = source[++srcpos];
+            }
+        }
+
+        public bool isAlpha(char ch)
+        {
+            return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_');
+        }
+
+        public bool isAlphaNum(char ch)
+        {
+            return isAlpha(ch) || isDigit(ch);
+        }
+
+        public string scanIdentifier()
+        {
+            String idstr = "";
+            char ch = source[srcpos];
+            while (isAlphaNum(ch))
+            {
+                idstr = idstr + ch;
+                ch = source[++srcpos];
+            }
+            return idstr;
+        }
+
+        public bool isDigit(char ch)
+        {
+            return (ch >= '0' && ch <= '9');
+        }
+
+        public string scanNumber()     
+        {
+            int bass = 10;              //default number base
+            char ch = source[srcpos];
+            String numstr = "" + ch;
+
+            if (ch == '0')             //set base
+            {
+                if ((source[srcpos + 1] == 'X' || source[srcpos + 1] == 'x'))
+                {
+                    bass = 16;
+                    numstr += source[++srcpos];
+                    srcpos++;
+                }
+                else
+                {
+                    bass = 8;
+                }
+            }
+            ch = source[++srcpos];
+            while (((bass == 10) && (ch >= '0' && ch <= '9')) ||
+                    ((bass == 8) && (ch >= '0' && ch <= '7')) ||
+                    ((bass == 16) && ((ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f'))))
+            {
+                numstr = numstr + ch;
+                ch = source[++srcpos];
+            }
+
+            return numstr;
+        }
+
+        public string scanCharConst()
+        {
+            string cstr = "";
+            char ch = source[++srcpos];
+            while ((ch != '\'') && (ch != '\n') && (ch != '\0'))
+            {
+                if ((ch == '\\') && (source[srcpos + 1] == '\''))
+                {
+                    cstr = cstr + "\\\'";
+                    srcpos++;                    //skip over escaped single quotes
+                }
+                else
+                {
+                    cstr = cstr + ch;
+                }
+                ch = source[++srcpos];
+            }
+            if (ch == '\'')         //add the closing quote if not at eoln or eof
+            {
+                cstr = cstr + '\'';
+                srcpos++;
+            }
+            return cstr;
+        }
+
+        public string scanStringConst()
+        {
+            string sstr = "";
+            char ch = source[++srcpos];
+            while ((ch != '\"') && (ch != '\n') && (ch != '\0'))
+            {
+                if ((ch == '\\') && (source[srcpos + 1] == '\"'))
+                {
+                    sstr = sstr + "\\\"";
+                    srcpos++;                    //skip over escaped double quotes
+                }
+                else
+                {
+                    sstr = sstr + ch;
+                }
+                ch = source[++srcpos];
+            }
+            if (ch == '\"')                     //skip the closing quote if not at eoln or eof
+            {
+                sstr = sstr + '\"';
+                srcpos++;
+            }
+            return sstr;
+        }
+
         public Fragment getFrag()
         {
             Fragment frag = null;
@@ -53,81 +201,54 @@ namespace OrigASM.Scan
             char ch = source[srcpos];
             while (true)
             {
-                //if (isSpace(ch))
-                //{
-                //    skipWhitespace();
-                //    frag = new Fragment(FragType.SPACE, (saveSpaces ? spstr.ToString() : " "));
-                //    break;
-                //}
+                if (isSpace(ch))
+                {
+                    skipWhitespace();
+                    frag = new Fragment(FragType.SPACE, " ");
+                    break;
+                }
 
-                ////line comment
-                //if (ch == '/' && (source[srcpos + 1] == '/'))
-                //{
-                //    skipLineComment();
-                //    ch = ' ';                   //replace comment with single space
-                //    continue;
-                //}
-
-                ////block comment
-                //if (ch == '/' && (source[srcpos + 1] == '*'))
-                //{
-                //    skipBlockComment();
-                //    ch = ' ';                   //replace comment with single space
-                //    continue;
-                //}
-
-                //L is a special case since it can start long char constants or long string constants, as well as identifiers
-                //if (ch == 'L')
-                //{
-                //    srcpos++;                     //skip initial 'L'
-                //    if ((source[srcpos + 1]) == '\'')
-                //    {
-                //        string chstr = scanCharLiteral(true);
-                //        frag = new Fragment(FragType.CHAR, chstr);
-                //        break;
-                //    }
-                //    else if ((source[srcpos + 1]) == '"')
-                //    {
-                //        string sstr = scanString(true);
-                //        frag = new Fragment(FragType.STRING, sstr);
-                //        break;
-                //    }
-                //}
+                //line comment
+                if (ch == ';')
+                {
+                    skipComment();
+                    ch = ' ';                   //replace comment with single space
+                    continue;
+                }
 
                 //identifier
-                //if (isAlpha(ch))
-                //{
-                //    string idstr = scanIdentifier();
-                //    frag = new Fragment(FragType.WORD, idstr);
-                //    break;
-                //}
+                if (isAlpha(ch))
+                {
+                    string idstr = scanIdentifier();
+                    frag = new Fragment(FragType.WORD, idstr);
+                    break;
+                }
 
                 //numeric constant
-                //'.' can start a float const
-                //if ((isDigit(ch)) || (ch == '.' && isDigit(source[srcpos + 1])))
-                //{
-                //    string numstr = scanNumber();
-                //    frag = new Fragment(FragType.NUMBER, numstr);
-                //    break;
-                //}
+                if (isDigit(ch))
+                {
+                    string numstr = scanNumber();
+                    frag = new Fragment(FragType.NUMBER, numstr);
+                    break;
+                }
 
                 //char constant
-                //if (ch == '\'')
-                //{
-                //    string chstr = scanCharLiteral(false);
-                //    frag = new Fragment(FragType.CHAR, chstr);
-                //    break;
-                //}
+                if (ch == '\'')
+                {
+                    string chstr = scanCharConst();
+                    frag = new Fragment(FragType.CHAR, chstr);
+                    break;
+                }
 
-                ////string constant
-                //if (ch == '"')
-                //{
-                //    string sstr = scanString(false);
-                //    frag = new Fragment(FragType.STRING, sstr);
-                //    break;
-                //}
+                //string constant
+                if (ch == '"')
+                {
+                    string sstr = scanStringConst();
+                    frag = new Fragment(FragType.STRING, sstr);
+                    break;
+                }
 
-                //end of line - does not include eolns in block comments or spliced lines
+                //end of line - does not include eolns in spliced lines
                 if (ch == '\n')
                 {
                     frag = new Fragment(FragType.EOLN, "<eoln>");
@@ -149,7 +270,6 @@ namespace OrigASM.Scan
             }
 
             return frag;
-
         }
     }
 

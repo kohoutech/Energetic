@@ -26,5 +26,18 @@ namespace OrigASM.Scan
 {
     class Preprocessor
     {
+        public Scanner scan;
+
+        public Preprocessor(string filename)
+        {
+            scan = new Scanner(filename);           //open main source file
+        }
+
+        //not handling preprocessing yet - just pass through for now
+        public Fragment getFrag()
+        {
+            Fragment frag = scan.getFrag();
+            return frag;
+        }
     }
 }

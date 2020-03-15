@@ -22,40 +22,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace OrigASM.Scan
+using Origami.Asm32;
+using Origami.Win32;
+
+namespace OrigASM.Assemble
 {
-    class Tokenizer
+    class Assembler
     {
-        Preprocessor prep;
-
-        public Tokenizer(String filename)
+        public Win32Obj Assemble(List<Instruction> insns)
         {
-            prep = new Preprocessor(filename);
-        }
-
-        public Fragment getNextFrag()
-        {
-            Fragment frag = prep.getFrag();
-            return frag;
-        }
-
-        public Token getToken()
-        {
-            Token token = tokenizer();
-            return token;
-        }
-
-        public Token tokenizer()
-        {
-            Token tok = null;
-            Fragment frag;
-
-            while (true)
-            {
-                frag = getNextFrag();
-            }
+            throw new NotImplementedException();
         }
     }
 }
-
-//Console.WriteLine("There's no sun in the shadow of the wizard");

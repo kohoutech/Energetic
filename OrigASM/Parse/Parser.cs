@@ -22,40 +22,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace OrigASM.Scan
+using OrigASM.Scan;
+using Origami.Asm32;
+
+namespace OrigASM.Parse
 {
-    class Tokenizer
+    class Parser
     {
-        Preprocessor prep;
+        public Tokenizer prep;
 
-        public Tokenizer(String filename)
+        public String filename;
+
+        public List<Instruction> parseFile(string _filename)
         {
-            prep = new Preprocessor(filename);
-        }
+            filename = _filename;
+            prep = new Tokenizer(filename);
 
-        public Fragment getNextFrag()
-        {
-            Fragment frag = prep.getFrag();
-            return frag;
-        }
-
-        public Token getToken()
-        {
-            Token token = tokenizer();
-            return token;
-        }
-
-        public Token tokenizer()
-        {
-            Token tok = null;
-            Fragment frag;
-
-            while (true)
+            Token token = prep.getToken();
+            while (token.type != TokenType.EOF)
             {
-                frag = getNextFrag();
+                token = prep.getToken();
             }
+
+            List<Instruction> insns = new List<Instruction>();
+            return insns;
         }
     }
 }
-
-//Console.WriteLine("There's no sun in the shadow of the wizard");

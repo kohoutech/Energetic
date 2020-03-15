@@ -24,7 +24,25 @@ using System.Text;
 
 namespace OrigASM.Scan
 {
-    class Token
+    public class Token
     {
+        public TokenType type;
+        public String chars;
+        
+    }
+
+    public enum TokenType
+    {
+        INSN,
+        IDENT,
+
+        INTCONST,
+        FLOATCONST,
+        CHARCONST,
+        STRINGCONST,
+
+        EOF,
+
+        ERROR              //any char we don't recognize
     }
 }
