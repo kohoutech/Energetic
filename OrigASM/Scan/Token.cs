@@ -46,7 +46,7 @@ namespace OrigASM.Scan
         }
 
         //these must be in the same order as the TokenType enum
-        String[] spelling = new String[] { "ident", "insn", "directive", "register",
+        String[] spelling = new String[] { "ident", "insn", "pseudo", "directive", "register",
                                            "int const", "float const", "char const", "string const",
                                            "(", ")", "[", "]", "=", ".", ",", ":", "$", "$$",
                                            "+", "-", "*", "/", "//", "%", "%%", "<", "<<", ">", ">>", "^", "|", "&", "~", "!",
@@ -93,6 +93,7 @@ namespace OrigASM.Scan
     {
         IDENT,
         INSN,
+        PSEUDO,
         DIRECTIVE,
         REGISTER,
 

@@ -33,6 +33,7 @@ namespace OrigASM.Scan
         public Preprocessor prep;
         List<Fragment> frags;
 
+        HashSet<string> pseudoList;
         InstructionList insnList;
         RegisterList regList;
 
@@ -42,6 +43,7 @@ namespace OrigASM.Scan
             prep = new Preprocessor(master, filename);
             frags = new List<Fragment>();
 
+            pseudoList = new HashSet<string>() { "DB", "DW", "DD", "DQ", "DT", "EQU" };
             insnList = new InstructionList();
             regList = new RegisterList();
         }
@@ -145,6 +147,11 @@ namespace OrigASM.Scan
                     {
                         tok = new Token(TokenType.DIRECTIVE);
                         tok.strval = frag.str.Substring(1);
+                    }
+                    else if (pseudoList.Contains(frag.str))
+                    {
+                        tok = new Token(TokenType.PSEUDO);
+                        tok.strval = frag.str;
                     }
                     else if (insnList.names.Contains(frag.str))
                     {
@@ -336,13 +343,6 @@ namespace OrigASM.Scan
         public InstructionList()
         {
             names = new HashSet<string>();
-
-            //pseudo ops
-            names.Add("DB");
-            names.Add("DW");
-            names.Add("DD");
-            names.Add("DQ");
-            names.Add("DT");
 
             names.Add("AAA");
             names.Add("AAD");
