@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Origami Win32 Library
-Copyright (C) 1998-2019  George E Greaney
+Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -130,8 +130,8 @@ namespace Origami.Win32
 
     public class OutputFile
     {
-        uint INITIAL_SIZE = 0x200;
-        uint SIZE_DELTA = 0x2000;
+        static uint INITIAL_SIZE = 0x200;
+        static uint SIZE_DELTA = 0x2000;
 
         String filename;
         byte[] outbuf;
@@ -140,10 +140,14 @@ namespace Origami.Win32
         uint maxlen;
 
         //for writing fields to a disk file
-        public OutputFile(String _filename)
+        public OutputFile(String _filename) : this(_filename, INITIAL_SIZE)
+        {
+        }
+
+        public OutputFile(String _filename, uint filelen)
         {
             filename = _filename;
-            outlen = INITIAL_SIZE;
+            outlen = filelen;
             outbuf = new byte[outlen];
             outpos = 0;
             maxlen = 0;
@@ -248,7 +252,7 @@ namespace Origami.Win32
             outpos = pos;
         }
 
-        public void writeOut()
+            public void writeOut()
         {
             File.WriteAllBytes(filename, outbuf);
         }

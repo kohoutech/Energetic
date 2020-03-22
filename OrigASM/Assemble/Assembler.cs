@@ -30,15 +30,54 @@ namespace OrigASM.Assemble
     class Assembler
     {
         public iFeedback master;
+        Assembly assembly;
+        Win32Coff objfile;
 
         public Assembler(iFeedback _master)
         {
             master = _master;
+
+            objfile = null;
         }
 
-        public Win32Obj assemble(List<Instruction> insns)
+        public Win32Coff assemble(Assembly _assembly)
         {
-            throw new NotImplementedException();
+            assembly = _assembly;
+            objfile = new Win32Coff();
+
+            foreach (Instruction insn in assembly.insns)
+            {
+                if (insn is Directive)
+                {
+                    handleDirective((Directive)insn);
+                }
+                else if (insn is PseudoOp)
+                {
+                    handlePseudoOp((PseudoOp)insn);
+                }
+                else
+                {
+                    handleInstruction(insn);
+                }
+            }
+
+            return objfile;
+        }
+
+        //- directives --------------------------------------------------------
+
+        public void handleDirective(Directive directive)
+        {
+        }
+
+        //- instructions ------------------------------------------------------
+
+        public void handlePseudoOp(PseudoOp pseudo)
+        {
+        }
+
+        public void handleInstruction(Instruction insn)
+        {
         }
     }
 }

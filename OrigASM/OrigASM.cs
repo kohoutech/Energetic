@@ -51,9 +51,11 @@ namespace OrigASM
 
             Parser parser = new Parser(this);
             Assembler assembler = new Assembler(this);
-            List<Instruction> insns = parser.parseFile(srcname);
-            Win32Obj objfile = assembler.assemble(insns);
-            objfile.WriteOut(outname);
+
+            Assembly assembly = parser.parseFile(srcname);        //front end
+
+            Win32Coff objfile = assembler.assemble(assembly);
+            objfile.writeToFile(outname);
         }
 
         //- assembler feedback ------------------------------------------------

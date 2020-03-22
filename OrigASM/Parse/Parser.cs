@@ -63,11 +63,12 @@ namespace OrigASM.Parse
 
         //- parsing methods ---------------------------------------------------
 
-        public List<Instruction> parseFile(string _filename)
+        public Assembly parseFile(string _filename)
         {
             filename = _filename;
             prep = new Tokenizer(master, filename);
-            List<Instruction> insns = new List<Instruction>();
+            Assembly assembly = new Assembly();
+            //List<Instruction> insns = new List<Instruction>();
 
             Token token = prep.getToken();
             while (token.type != TokenType.EOF)
@@ -111,14 +112,14 @@ namespace OrigASM.Parse
                         labels.RemoveAt(0);
 
                     }
-                    insns.Add(insn);
+                    assembly.AddInsn(insn);
                 }
 
                 token = prep.getToken();
                 Console.WriteLine(token.ToString());
             }
 
-            return insns;
+            return assembly;
         }
 
         //- operands ----------------------------------------------------------
@@ -235,6 +236,10 @@ namespace OrigASM.Parse
             {
                 case "ADD":
                     insn = new Add(opList[0], opList[1], false);
+                    break;
+
+                case "SUB":
+                    insn = new Subtract(opList[0], opList[1], false);
                     break;
 
                 case "MOV":

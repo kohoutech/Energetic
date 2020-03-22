@@ -57,7 +57,7 @@
     <Compile Include="ASM32\Operand.cs" />
     <Compile Include="ASM32\PseudoOp.cs" />
     <Compile Include="ASM32\Register.cs" />
-    <Compile Include="ASM32\Symbol.cs" />
+    <Compile Include="ASM32\Assembly.cs" />
     <Compile Include="Assemble\Assembler.cs" />
     <Compile Include="iFeedback.cs" />
     <Compile Include="Options.cs" />
@@ -76,7 +76,6 @@
     <Compile Include="WIN32\Section.cs" />
     <Compile Include="WIN32\Win32Coff.cs" />
     <Compile Include="WIN32\Win32Exe.cs" />
-    <Compile Include="WIN32\Win32Obj.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

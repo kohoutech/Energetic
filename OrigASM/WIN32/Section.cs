@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Origami Win32 Library
-Copyright (C) 1998-2019  George E Greaney
+Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,46 +22,73 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-//https://en.wikibooks.org/wiki/X86_Disassembly/Windows_Executable_Files
+//https://en.wikibooks.org/wiki/X86_Disassembly/Windows_Executable_Files#Section_Table
+//https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#section-table-section-headers
 
 namespace Origami.Win32
 {
     public class Section
     {
-
         //section header fields
         public int secNum;
         public String name;
 
-        public uint memloc;                 //section addr in memory
-        public uint memsize;                //section size in memory
-        public uint fileloc;                //section addr in file
-        public uint filesize;               //section size in file
+        public uint memPos;                 //section addr in memory
+        public uint memSize;                //section size in memory
+        public uint filePos;                //section addr in file
+        public uint fileSize;               //section size in file
 
-        public List<CoffRelocation> relocations;
-        public List<CoffLineNumber> linenumbers;                //line num data is deprecated
+        public Characteristics flags;
+        public Alignment dataAlignment;
 
         //flag fields
-        public bool hasCode;
-        public bool hasInitializedData;
-        public bool hasUninitializedData;
-        public bool hasInfo;
-        public bool isRemoveable;
-        public bool hasComdat;
-        public bool resetSpecExcept;
-        public bool hasGlobalPtrData;
-        public bool hasExtendRelocs;
-        public bool isDiscardable;
-        public bool notCached;
-        public bool notPaged;
-        public bool isShared;
-        public bool isExecutable;
-        public bool isReadable;
-        public bool isWritable;
+        [Flags]
+        public enum Characteristics : uint
+        {
+            IMAGE_SCN_CNT_CODE = 0x00000020,  	            //The section contains executable code.
+            IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040, 	//The section contains initialized data.
+            IMAGE_SCN_CNT_UNINITIALIZED_DATA = 0x00000080,  //The section contains uninitialized data.
+            IMAGE_SCN_LNK_INFO = 0x00000200,  	            //The section contains comments or other information. The .drectve section has this type. This is valid for object files only.
+            IMAGE_SCN_LNK_REMOVE = 0x00000800,  	        //The section will not become part of the image. This is valid only for object files.
+            IMAGE_SCN_LNK_COMDAT = 0x00001000,  	        //The section contains COMDAT data. For more information, see COMDAT Sections (Object Only). This is valid only for object files.
+            IMAGE_SCN_GPREL = 0x00008000,  	                //The section contains data referenced through the global pointer (GP).
 
-        public int dataAlignment;
+            IMAGE_SCN_LNK_NRELOC_OVFL = 0x01000000,         //The section contains extended relocations.
+            IMAGE_SCN_MEM_DISCARDABLE = 0x02000000,         //The section can be discarded as needed.
+            IMAGE_SCN_MEM_NOT_CACHED = 0x04000000,          //The section cannot be cached.
+            IMAGE_SCN_MEM_NOT_PAGED = 0x08000000,           //The section is not pageable.
+            IMAGE_SCN_MEM_SHARED = 0x10000000,              //The section can be shared in memory.
+            IMAGE_SCN_MEM_EXECUTE = 0x20000000,             //The section can be executed as code.
+            IMAGE_SCN_MEM_READ = 0x40000000,                //The section can be read.
+            IMAGE_SCN_MEM_WRITE = 0x80000000                //The section can be written to. 
+        }
+
+        //Align data on a nnn-byte boundary. Valid only for object files.
+        public enum Alignment
+        {
+            IMAGE_SCN_ALIGN_1BYTES,
+            IMAGE_SCN_ALIGN_2BYTES,
+            IMAGE_SCN_ALIGN_4BYTES,
+            IMAGE_SCN_ALIGN_8BYTES,
+            IMAGE_SCN_ALIGN_16BYTES,
+            IMAGE_SCN_ALIGN_32BYTES,
+            IMAGE_SCN_ALIGN_64BYTES,
+            IMAGE_SCN_ALIGN_128BYTES,
+            IMAGE_SCN_ALIGN_256BYTES,
+            IMAGE_SCN_ALIGN_512BYTES,
+            IMAGE_SCN_ALIGN_1024BYTES,
+            IMAGE_SCN_ALIGN_2048BYTES,
+            IMAGE_SCN_ALIGN_4096BYTES,
+            IMAGE_SCN_ALIGN_8192BYTES
+        }
+
+        public List<CoffRelocation> relocations;
+        public uint relocTblPos;
+
+        public List<CoffLineNumber> linenumbers;                //line num data is deprecated
 
         public byte[] data;
+        public uint len;
 
         //new section cons
         public Section(String _name)
@@ -69,121 +96,90 @@ namespace Origami.Win32
             secNum = 0;
             name = _name;
 
-            memsize = 0;
-            memloc = 0;
-            filesize = 0;
-            fileloc = 0;
+            memSize = 0;
+            memPos = 0;
+            fileSize = 0;
+            filePos = 0;
+
+            flags = 0;
+            dataAlignment = Alignment.IMAGE_SCN_ALIGN_1BYTES;
 
             relocations = new List<CoffRelocation>();
             linenumbers = new List<CoffLineNumber>();
 
-            hasCode = false;
-            hasInitializedData = false;
-            hasUninitializedData = false;
-            hasInfo = false;
-            isRemoveable = false;
-            hasComdat = false;
-            resetSpecExcept = false;
-            hasGlobalPtrData = false;
-            hasExtendRelocs = false;
-            isExecutable = false;
-            isReadable = false;
-            isWritable = false;
-            isShared = false;
-            isDiscardable = false;
-            notCached = false;
-            notPaged = false;
-
-            dataAlignment = 1;
-
-            data = new byte[0];            
+            data = new byte[0];
+            len = 0;
         }
 
-//- reading in ----------------------------------------------------------------
+        //- reading in ----------------------------------------------------------------
 
-        public static Section loadSection(SourceFile source)
+        //read in both section tbl entry & section data
+        public static Section readSection(SourceFile source)
         {
-
+            //if section name is stored in string tbl, we read in index & let caller deref the actual name
             String name = source.getAsciiString(8);
             Section section = new Section(name);
 
-            section.memsize = source.getFour();
-            section.memloc = source.getFour();
-            section.filesize = source.getFour();
-            section.fileloc = source.getFour();
+            section.memSize = source.getFour();
+            section.memPos = source.getFour();
+            section.fileSize = source.getFour();
+            section.filePos = source.getFour();
 
-            section.relocations = CoffRelocation.load(source);
-            section.linenumbers = CoffLineNumber.load(source);
+            uint relocPos = source.getFour();
+            uint lineNumPos = source.getFour();
+            uint relocCount = source.getFour();
+            uint lineNumCount = source.getFour();
+            section.relocations = CoffRelocation.read(source, relocPos, relocCount);
+            section.linenumbers = CoffLineNumber.read(source, lineNumPos, lineNumCount);
 
-            uint flags = source.getFour();
-            section.hasCode = (flags & 0x20) != 0;
-            section.hasInitializedData = (flags & 0x40) != 0;
-            section.hasUninitializedData = (flags & 0x80) != 0;
-            section.hasInfo = (flags & 0x200) != 0;
-            section.isRemoveable = (flags & 0x800) != 0;
-            section.hasComdat = (flags & 0x1000) != 0;
-            section.resetSpecExcept = (flags & 0x4000) != 0;
-            section.hasGlobalPtrData = (flags & 0x8000) != 0;
-            section.hasExtendRelocs = (flags & 0x02000000) != 0;
-            section.isDiscardable = (flags & 0x02000000) != 0;
-            section.notCached = (flags & 0x04000000) != 0;
-            section.notPaged = (flags & 0x08000000) != 0;
-            section.isShared = (flags & 0x10000000) != 0;
-            section.isExecutable = (flags & 0x20000000) != 0;
-            section.isReadable = (flags & 0x40000000) != 0;
-            section.isWritable = (flags & 0x80000000) != 0;
-
-            section.dataAlignment = (int)((flags >> 5) % 0x10);
+            //load flags & extract alignment value
+            uint flagval = source.getFour();
+            section.dataAlignment = (Alignment)((flagval >> 20) % 0x10);
+            flagval &= ~((uint)0x00f00000);
+            section.flags = (Characteristics)flagval;
 
             //load section data - read in all the bytes that will be loaded into mem (memsize)
             //and skip the remaining section bytes (filesize) to pad out the data to a file boundary
-            section.data = source.getRange(section.fileloc, section.memsize);          
+            section.data = source.getRange(section.filePos, section.memSize);
 
             return section;
         }
 
-//- writing out ---------------------------------------------------------------
+        //- writing out ---------------------------------------------------------------
 
         public void writeSectionTblEntry(OutputFile outfile)
         {
             outfile.putFixedString(name, 8);
 
-            outfile.putFour(memsize);
-            outfile.putFour(memloc);
-            outfile.putFour(filesize);
-            outfile.putFour(fileloc);
+            outfile.putFour(memSize);
+            outfile.putFour(memPos);
+            outfile.putFour(fileSize);
+            outfile.putFour(filePos);
 
-            CoffRelocation.write(outfile);
-            CoffLineNumber.write(outfile);
+            //line numbers are deprecated, we don't write them
+            outfile.putFour(relocTblPos);
+            outfile.putFour(0);
+            outfile.putFour((uint)relocations.Count);
+            outfile.putFour(0);
 
-            uint flags = 0;
-            if (hasCode) flags += 0x20;
-            if (hasInitializedData) flags += 0x40;
-            if (hasUninitializedData) flags += 0x80;
-            if (hasInfo) flags += 0x200;
-            if (isRemoveable) flags += 0x800;
-            if (hasComdat) flags += 0x1000;
-            if (resetSpecExcept) flags += 0x4000;
-            if (hasGlobalPtrData) flags += 0x8000;
-            if (hasExtendRelocs) flags += 0x02000000;
-            if (isDiscardable) flags += 0x02000000;
-            if (notCached) flags += 0x04000000;
-            if (notPaged) flags += 0x08000000;
-            if (isShared) flags += 0x10000000;
-            if (isExecutable) flags += 0x20000000;
-            if (isReadable) flags += 0x40000000;
-            if (isWritable) flags += 0x80000000;
-            flags += (uint)(dataAlignment << 5);
+            uint flagval = (uint)flags;
+            flagval = flagval | ((uint)dataAlignment << 20);
+            outfile.putFour(flagval);
         }
 
         public void writeSectionData(OutputFile outfile)
         {
             outfile.putRange(data);
+
+            //these get written directly after the section data
+            CoffRelocation.write(outfile, relocTblPos);
+            CoffLineNumber.write(outfile);
         }
     }
 
-//-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
 
+    //relocation tbl entry
     public class CoffRelocation
     {
         public enum Reloctype
@@ -209,34 +205,36 @@ namespace Origami.Win32
             type = _type;
         }
 
-        internal void writeToFile(OutputFile outfile)
+        public void writeToFile(OutputFile outfile)
         {
             outfile.putFour(address);
             outfile.putFour(symTblIdx);
-            outfile.putTwo((uint)type);            
+            outfile.putTwo((uint)type);
         }
 
-        public static List<CoffRelocation> load(SourceFile source)
+        public static List<CoffRelocation> read(SourceFile source, uint pos, uint count)
         {
-            throw new NotImplementedException();
+            return null;        //not implemented yet
         }
 
-        public static void write(OutputFile outfile)
+        public static void write(OutputFile outfile, uint pos)
         {
-            throw new NotImplementedException();
+            //not implemented yet
         }
     }
 
+    //line number tbl entry
+    //Microsoft states that these are deprecated
     public class CoffLineNumber
     {
-        public static List<CoffLineNumber> load(SourceFile source)
+        public static List<CoffLineNumber> read(SourceFile source, uint pos, uint count)
         {
-            throw new NotImplementedException();
+            return null;        //we don't read in line numbers
         }
 
         public static void write(OutputFile outfile)
         {
-            throw new NotImplementedException();
+            //we don't write out line numbers
         }
     }
 }
