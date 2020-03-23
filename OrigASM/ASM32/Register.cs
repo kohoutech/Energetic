@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Origami Asm32 Library
-Copyright (C) 1998-2018  George E Greaney
+Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -136,38 +136,48 @@ namespace Origami.Asm32
 
     public class Register32 : Register
     {
-        static List<Register32> regs;
+        static Dictionary<String, Register32> regs;
 
         public enum REG32 { EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI };
+        public static String[] names = { "EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI" };
+
         public REG32 reg32;
 
-        public static Register32 EAX = new Register32(REG32.EAX, "EAX", 0);
-        public static Register32 ECX = new Register32(REG32.ECX, "ECX", 1);
-        public static Register32 EDX = new Register32(REG32.EDX, "EDX", 2);
-        public static Register32 EBX = new Register32(REG32.EBX, "EBX", 3);
-        public static Register32 ESP = new Register32(REG32.ESP, "ESP", 4);
-        public static Register32 EBP = new Register32(REG32.EBP, "EBP", 5);
-        public static Register32 ESI = new Register32(REG32.ESI, "ESI", 6);
-        public static Register32 EDI = new Register32(REG32.EDI, "EDI", 7);
+        public static Register32 EAX = new Register32(REG32.EAX, names[0], 0);
+        public static Register32 ECX = new Register32(REG32.ECX, names[1], 1);
+        public static Register32 EDX = new Register32(REG32.EDX, names[2], 2);
+        public static Register32 EBX = new Register32(REG32.EBX, names[3], 3);
+        public static Register32 ESP = new Register32(REG32.ESP, names[4], 4);
+        public static Register32 EBP = new Register32(REG32.EBP, names[5], 5);
+        public static Register32 ESI = new Register32(REG32.ESI, names[6], 6);
+        public static Register32 EDI = new Register32(REG32.EDI, names[7], 7);
 
         static Register32()
         {
-            regs = new List<Register32>();
-            regs.Add(EAX);
-            regs.Add(ECX);
-            regs.Add(EDX);
-            regs.Add(EBX);
-            regs.Add(ESP);
-            regs.Add(EBP);
-            regs.Add(ESI);
-            regs.Add(EDI);
+            regs = new Dictionary<string, Register32>();
+            regs.Add(names[0], EAX);
+            regs.Add(names[1], ECX);
+            regs.Add(names[2], EDX);
+            regs.Add(names[3], EBX);
+            regs.Add(names[4], ESP);
+            regs.Add(names[5], EBP);
+            regs.Add(names[6], ESI);
+            regs.Add(names[7], EDI);
         }
 
+        //get reg by name
+        static public Register32 getReg(string name)
+        {
+            return regs[name];
+        }
+
+        //get reg by index
         static public Register32 getReg(int i)
         {
-            return regs[i];
+            return regs[names[i]];
         }
 
+        //cons
         public Register32(REG32 r32, String name, int code) : base (name, code)
         {
             reg32 = r32;

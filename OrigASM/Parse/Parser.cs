@@ -146,10 +146,18 @@ namespace OrigASM.Parse
                     break;
 
                 case TokenType.LBRACKET:
-                    token = prep.getToken();
-                    Symbol sym = getSymbol(token.strval);
+                    Token lhs = prep.getToken();        //assume lhs is a register for now
+                    Token sign = prep.getToken();
+                    Token val = prep.getToken();
                     token = prep.getToken();            //skip closing bracket
-                    op = new Reference(sym);
+                    Register reg = lhs.reg;
+                    uint immval = (uint)val.intval;
+                    if (sign.type == TokenType.MINUS)
+                    {
+                        immval = 0x100 - immval;
+                    }
+                    Immediate imm = new Immediate(immval, OPSIZE.Byte);
+                    op = new Memory(reg, imm);                    
                     break;
             }
             return op;

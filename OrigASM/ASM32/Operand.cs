@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Origami Asm32 Library
-Copyright (C) 1998-2018  George E Greaney
+Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -214,6 +214,10 @@ namespace Origami.Asm32
         public Register r2;
         public Mult mult;
         public Immediate imm;
+
+        public Memory(Register r1, Immediate imm) : this(r1, null, Mult.NONE, imm, OPSIZE.DWord, Segment.SEG.CS)
+        {
+        }
 
         public Memory(Register _r1, Register _r2, Mult _mult, Immediate _imm, OPSIZE _size, Segment.SEG _seg)
         {
