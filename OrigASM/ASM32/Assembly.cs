@@ -83,12 +83,15 @@ namespace Origami.Asm32
 
     public class Symbol : Operand
     {
+        public enum SymType { CONST, GLOBAL, LOCAL, PUBLIC, EXTERN }
         public String name;
+        public SymType type;
         public Instruction def;
 
         public Symbol(string _name)
         {
             name = _name;
+            type = SymType.GLOBAL;
             def = null;
         }
     }

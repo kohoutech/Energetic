@@ -32,12 +32,14 @@ namespace OrigASM.Assemble
         public iFeedback master;
         Assembly assembly;
         Win32Coff objfile;
+        Section curSection;
 
         public Assembler(iFeedback _master)
         {
             master = _master;
 
             objfile = null;
+            curSection = null;
         }
 
         public Win32Coff assemble(Assembly _assembly)
@@ -68,6 +70,27 @@ namespace OrigASM.Assemble
 
         public void handleDirective(Directive directive)
         {
+            switch (directive.type)
+            {
+                case DirectiveType.PUBLIC:
+                    Symbol sym = ((PublicDir)directive).sym;
+                    sym.type = Symbol.SymType.PUBLIC;
+                    break;
+
+                case DirectiveType.SECTION:
+
+                    String secName = ((SectionDir)directive).name;
+                    Section sec = objfile.findSection(secName);
+                    if (sec == null)
+                    {
+                        sec = objfile.addSection(secName);
+                    }
+                    curSection = sec;
+                    break;
+
+                default:
+                    break;
+            }
         }
 
         //- instructions ------------------------------------------------------

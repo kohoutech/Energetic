@@ -109,12 +109,12 @@ namespace OrigASM.Scan
 
         public string scanIdentifier()
         {
-            String idstr = "" + Char.ToUpper(source[srcpos]);         //store first char
+            String idstr = "" + source[srcpos];         //store first char
 
             char ch = source[++srcpos];
             while (isIdentChar(ch))
             {
-                idstr = idstr + Char.ToUpper(ch);       //case-insensitive
+                idstr = idstr + ch;       
                 ch = source[++srcpos];
             }
             return idstr;

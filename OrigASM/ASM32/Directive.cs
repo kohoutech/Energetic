@@ -29,6 +29,17 @@ namespace Origami.Asm32
     public class Directive : Instruction
     {
         public DirectiveType type;
+
+        //all the directives that assembler recognizes
+        public static HashSet<String> names;
+
+        static Directive()
+        {
+            names = new HashSet<string>();
+
+            names.Add("SECTION");
+            names.Add("PUBLIC");
+        }
     }
 
     public class SectionDir : Directive
@@ -42,13 +53,13 @@ namespace Origami.Asm32
         }
     }
 
-    public class GlobalDir : Directive
+    public class PublicDir : Directive
     {
         public Symbol sym;
 
-        public GlobalDir(Symbol _sym)
+        public PublicDir(Symbol _sym)
         {
-            type = DirectiveType.GLOBAL;
+            type = DirectiveType.PUBLIC;
             sym = _sym;
         }
     }
@@ -56,6 +67,9 @@ namespace Origami.Asm32
     public enum DirectiveType
     {
         SECTION,
-        GLOBAL
+        PUBLIC
     }
+
+    //-------------------------------------------------------------------------
+
 }

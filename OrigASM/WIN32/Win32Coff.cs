@@ -38,8 +38,10 @@ namespace Origami.Win32
         public int characteristics;
 
         public List<Section> sections;
+        public Dictionary<String, Section> secNames;
 
         public List<CoffSymbol> symbolTbl;
+        public Dictionary<String, CoffSymbol> symNames;
         uint symbolTblAddr;
 
         public Dictionary<int, String> stringTbl;
@@ -57,23 +59,6 @@ namespace Origami.Win32
 
             stringTbl = new Dictionary<int, string>();
             strTblIdx = 4;
-        }
-
-        public void addSection(Section sec)
-        {
-            sections.Add(sec);
-        }
-
-        public void addSymbol(CoffSymbol sym)
-        {
-            symbolTbl.Add(sym);
-        }
-
-        public int addString(string str)
-        {
-            stringTbl.Add(strTblIdx, str);
-            strTblIdx += (str.Length + 1);
-            return strTblIdx;
         }
 
         //- reading in ----------------------------------------------------------------
@@ -235,22 +220,51 @@ namespace Origami.Win32
             outfile.writeOut();
         }
 
-
         //-----------------------------------------------------------------------------
 
-        public Section findSection(uint memloc)
+        public Section findSection(String name)
         {
             Section sec = null;
-            for (int i = 0; i < sections.Count; i++)
+            if (secNames.ContainsKey(name))
             {
-                if ((memloc >= sections[i].memPos) && (memloc < (sections[i].memPos + sections[i].memSize)))
-                {
-                    sec = sections[i];
-                    break;
-                }
+                sec = secNames[name];
             }
             return sec;
         }
+
+        public Section addSection(String name)
+        {
+            Section sec = new Section(name);
+            sections.Add(sec);
+            secNames[name] = sec;
+            return sec;
+        }
+
+        public CoffSymbol findSymbol(String name)
+        {
+            CoffSymbol sym = null;
+            if (symNames.ContainsKey(name))
+            {
+                sym = symNames[name];
+            }
+            return sym;
+        }
+
+        public CoffSymbol addSymbol(String name, uint val, int num, uint type, uint storage, uint aux)
+        {
+            CoffSymbol sym = new CoffSymbol(name, val, num, type, storage, aux);
+            symbolTbl.Add(sym);
+            symNames[name] = sym;
+            return sym;
+        }
+
+        public int addString(string str)
+        {
+            stringTbl.Add(strTblIdx, str);
+            strTblIdx += (str.Length + 1);
+            return strTblIdx;
+        }
+
     }
 
     //- obj sym table ------------------------------------------------------------
@@ -264,11 +278,11 @@ namespace Origami.Win32
         uint storageClass;
         uint auxSymbolCount;
 
-        public CoffSymbol(String _name, uint _val, uint _num, uint _type, uint _storage, uint _aux)
+        public CoffSymbol(String _name, uint _val, int _num, uint _type, uint _storage, uint _aux)
         {
             name = _name;
             value = _val;
-            sectionNum = _num;
+            sectionNum = (uint)_num;
             type = _type;
             storageClass = _storage;
             auxSymbolCount = _aux;

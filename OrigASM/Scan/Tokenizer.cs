@@ -43,6 +43,7 @@ namespace OrigASM.Scan
             prep = new Preprocessor(master, filename);
             frags = new List<Fragment>();
 
+
             pseudoList = new HashSet<string>() { "DB", "DW", "DD", "DQ", "DT", "EQU" };
             insnList = new InstructionList();
             regList = new RegisterList();
@@ -143,22 +144,33 @@ namespace OrigASM.Scan
                 //check if word is instruction, directive or identifier
                 if (frag.type == FragType.WORD)
                 {
+                    String upstr = frag.str.ToUpper();
                     if (frag.str[0] == '.')
                     {
-                        tok = new Token(TokenType.DIRECTIVE);
-                        tok.strval = frag.str.Substring(1);
+                        //either a directive or an identifier
+                        string s = upstr.Substring(1);
+                        if (Directive.names.Contains(s))
+                        {
+                            tok = new Token(TokenType.DIRECTIVE);
+                            tok.strval = s;
+                        }
+                        else
+                        {
+                            tok = new Token(TokenType.IDENT);
+                            tok.strval = frag.str;
+                        }
                     }
-                    else if (pseudoList.Contains(frag.str))
+                    else if (pseudoList.Contains(upstr))
                     {
                         tok = new Token(TokenType.PSEUDO);
                         tok.strval = frag.str;
                     }
-                    else if (insnList.names.Contains(frag.str))
+                    else if (insnList.names.Contains(upstr))
                     {
                         tok = new Token(TokenType.INSN);
                         tok.strval = frag.str;
                     }
-                    else if (regList.regs.ContainsKey(frag.str))
+                    else if (regList.regs.ContainsKey(upstr))
                     {
                         tok = new Token(TokenType.REGISTER);
                         tok.reg = regList.regs[frag.str];
@@ -332,7 +344,7 @@ namespace OrigASM.Scan
             return tok;
         }
     }
-
+    
     //-------------------------------------------------------------------------
 
     //all the instructions that assembler recognizes

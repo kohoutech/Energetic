@@ -193,10 +193,10 @@ namespace OrigASM.Parse
                     direct = new SectionDir(token.strval);
                     break;
 
-                case "GLOBAL":
+                case "PUBLIC":
                     token = prep.getToken();
                     Symbol gsym = getSymbol(token.strval);
-                    direct = new GlobalDir(gsym);
+                    direct = new PublicDir(gsym);
                     break;
             }
 
