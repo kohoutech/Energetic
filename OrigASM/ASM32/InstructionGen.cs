@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Origami Asm32 Library
-Copyright (C) 1998-2018  George E Greaney
+Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -581,7 +581,7 @@ namespace Origami.Asm32
                     else
                     {
                         //80 - 83
-                        bytes.Add((byte)(reg2.size == OPSIZE.Byte ? 0x80 : (reg2.size == OPSIZE.DWord ? 0x81 : 0x83)));
+                        bytes.Add((byte)(reg1.size == OPSIZE.Byte ? 0x80 : (reg2.size == OPSIZE.DWord ? 0x81 : 0x83)));
                         bytes.Add((byte)((borrow ? 0xd8 : 0xe8) + reg1.code));
                     }
                 }

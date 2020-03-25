@@ -55,7 +55,10 @@ namespace Origami.Win32
             characteristics = 0;
 
             sections = new List<Section>();
+            secNames = new Dictionary<string, Section>();
+
             symbolTbl = new List<CoffSymbol>();
+            symNames = new Dictionary<string, CoffSymbol>();
 
             stringTbl = new Dictionary<int, string>();
             strTblIdx = 4;
@@ -187,10 +190,10 @@ namespace Origami.Win32
             filepos += (uint)sections.Count * 0x28;            //add sec tbl size
             for (int i = 0; i < sections.Count; i++)           //add section data sizes
             {
-                if (sections[i].data.Length > 0)
+                if (sections[i].data.Count > 0)
                 {
                     sections[i].filePos = filepos;
-                    sections[i].fileSize = (uint)(sections[i].data.Length);
+                    sections[i].fileSize = (uint)(sections[i].data.Count);
                     filepos += sections[i].fileSize;
                     uint relocsize = (uint)(sections[i].relocations.Count * 0x0a);
                     if (relocsize > 0)
@@ -278,11 +281,11 @@ namespace Origami.Win32
         uint storageClass;
         uint auxSymbolCount;
 
-        public CoffSymbol(String _name, uint _val, int _num, uint _type, uint _storage, uint _aux)
+        public CoffSymbol(String _name, uint _val, int _secnum, uint _type, uint _storage, uint _aux)
         {
             name = _name;
             value = _val;
-            sectionNum = (uint)_num;
+            sectionNum = (uint)_secnum;
             type = _type;
             storageClass = _storage;
             auxSymbolCount = _aux;

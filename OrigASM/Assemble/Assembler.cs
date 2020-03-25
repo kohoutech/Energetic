@@ -63,6 +63,8 @@ namespace OrigASM.Assemble
                 }
             }
 
+            finishUp();
+
             return objfile;
         }
 
@@ -101,6 +103,23 @@ namespace OrigASM.Assemble
 
         public void handleInstruction(Instruction insn)
         {
+            curSection.addData(insn.getBytes());
+        }
+
+        public void finishUp()
+        {
+            List<Symbol> syms = assembly.getSymbols();
+            foreach (Symbol sym in syms)
+            {
+                switch (sym.type)
+                {
+                    case Symbol.SymType.PUBLIC:
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         }
     }
 }

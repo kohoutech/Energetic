@@ -34,12 +34,16 @@ namespace OrigASM.Parse
 
         public String filename;
 
+        public Assembly assembly;
+
         public Dictionary<String, Symbol> symbolTable;
         public List<Symbol> labels;
 
         public Parser(iFeedback _master)
         {
             master = _master;
+
+            assembly = null;
 
             symbolTable = new Dictionary<string, Symbol>();
             labels = new List<Symbol>();
@@ -57,6 +61,7 @@ namespace OrigASM.Parse
             {
                 sym = new Symbol(symId);
                 symbolTable.Add(symId, sym);
+                assembly.addSymbol(sym);
             }
             return sym;
         }
@@ -67,7 +72,7 @@ namespace OrigASM.Parse
         {
             filename = _filename;
             prep = new Tokenizer(master, filename);
-            Assembly assembly = new Assembly();
+            assembly = new Assembly();
             //List<Instruction> insns = new List<Instruction>();
 
             Token token = prep.getToken();
@@ -112,7 +117,7 @@ namespace OrigASM.Parse
                         labels.RemoveAt(0);
 
                     }
-                    assembly.AddInsn(insn);
+                    assembly.addInsn(insn);
                 }
 
                 token = prep.getToken();
@@ -134,7 +139,7 @@ namespace OrigASM.Parse
                     break;
 
                 case TokenType.INTCONST:
-                    op = new IntConst(token.intval);
+                    op = new Immediate((uint)token.intval, OPSIZE.Byte);                        
                     break;
 
                 case TokenType.IDENT:

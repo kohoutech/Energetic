@@ -87,8 +87,7 @@ namespace Origami.Win32
 
         public List<CoffLineNumber> linenumbers;                //line num data is deprecated
 
-        public byte[] data;
-        public uint len;
+        public List<Byte> data;
 
         //new section cons
         public Section(String _name)
@@ -107,8 +106,19 @@ namespace Origami.Win32
             relocations = new List<CoffRelocation>();
             linenumbers = new List<CoffLineNumber>();
 
-            data = new byte[0];
-            len = 0;
+            data = new List<byte>();            
+        }
+
+        //- reading in ----------------------------------------------------------------
+
+        public void resetData()
+        {
+            data.Clear();
+        }
+
+        public void addData(List<Byte> bytes)
+        {
+            data.AddRange(bytes);            
         }
 
         //- reading in ----------------------------------------------------------------
@@ -140,7 +150,7 @@ namespace Origami.Win32
 
             //load section data - read in all the bytes that will be loaded into mem (memsize)
             //and skip the remaining section bytes (filesize) to pad out the data to a file boundary
-            section.data = source.getRange(section.filePos, section.memSize);
+            section.data = new List<Byte>(source.getRange(section.filePos, section.memSize));
 
             return section;
         }
@@ -169,7 +179,7 @@ namespace Origami.Win32
 
         public void writeSectionData(OutputFile outfile)
         {
-            outfile.putRange(data);
+            outfile.putRange(data.ToArray());
 
             //these get written directly after the section data
             CoffRelocation.write(outfile, relocTblPos);

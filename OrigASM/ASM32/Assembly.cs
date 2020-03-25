@@ -41,14 +41,20 @@ namespace Origami.Asm32
             outlines = new List<string>();
         }
 
-        public void AddInsn(Instruction insn)
+        public void addInsn(Instruction insn)
         {
             insns.Add(insn);
         }
 
-        public void AddSymbol(Symbol sym)
+        public void addSymbol(Symbol sym)
         {
             symbolTable[sym.name] = sym;
+        }
+
+        public List<Symbol> getSymbols()
+        {
+            List<Symbol> syms = new List<Symbol>(symbolTable.Values);
+            return syms;
         }
 
         public void addLine(String line)

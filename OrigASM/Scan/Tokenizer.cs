@@ -163,17 +163,17 @@ namespace OrigASM.Scan
                     else if (pseudoList.Contains(upstr))
                     {
                         tok = new Token(TokenType.PSEUDO);
-                        tok.strval = frag.str;
+                        tok.strval = upstr;
                     }
                     else if (insnList.names.Contains(upstr))
                     {
                         tok = new Token(TokenType.INSN);
-                        tok.strval = frag.str;
+                        tok.strval = upstr;
                     }
                     else if (regList.regs.ContainsKey(upstr))
                     {
                         tok = new Token(TokenType.REGISTER);
-                        tok.reg = regList.regs[frag.str];
+                        tok.reg = regList.regs[upstr];
                     }
                     else
                     {
