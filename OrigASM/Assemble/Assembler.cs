@@ -85,7 +85,18 @@ namespace OrigASM.Assemble
                     Section sec = objfile.findSection(secName);
                     if (sec == null)
                     {
-                        sec = objfile.addSection(secName);
+                        Section.Flags flags = Section.TEXTFLAGS;
+                        Section.Alignment align = Section.Alignment.IMAGE_SCN_ALIGN_16BYTES;
+                        if (secName.Equals(".data")) {
+                            flags = Section.DATAFLAGS;
+                            align = Section.Alignment.IMAGE_SCN_ALIGN_4BYTES;
+                        }
+                        else if (secName.Equals(".bss"))
+                        {
+                            flags = Section.BSSFLAGS;
+                            align = Section.Alignment.IMAGE_SCN_ALIGN_4BYTES;
+                        }
+                        sec = objfile.addSection(secName, flags, align);
                     }
                     curSection = sec;
                     break;
@@ -103,7 +114,9 @@ namespace OrigASM.Assemble
 
         public void handleInstruction(Instruction insn)
         {
-            curSection.addData(insn.getBytes());
+            uint addr = (uint)curSection.addData(insn.getBytes());
+            insn.addr = addr;
+            insn.sec = curSection.secNum;
         }
 
         public void finishUp()
@@ -114,6 +127,8 @@ namespace OrigASM.Assemble
                 switch (sym.type)
                 {
                     case Symbol.SymType.PUBLIC:
+                        objfile.addSymbol(sym.name, sym.def.addr, sym.def.sec, 0, CoffStorageClass.IMAGE_SYM_CLASS_EXTERNAL, 0);
+
                         break;
 
                     default:

@@ -38,6 +38,7 @@ namespace Origami.Asm32
         public int opcount;
 
         public uint addr;
+        public int sec;
         public List<byte> bytes;
 
         public Instruction()
@@ -48,6 +49,7 @@ namespace Origami.Asm32
             op3 = null;
             lockprefix = false;
             addr = 0;
+            sec = 0;
             bytes = null;
 
         }

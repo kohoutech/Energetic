@@ -38,12 +38,12 @@ namespace Origami.Win32
         public uint filePos;                //section addr in file
         public uint fileSize;               //section size in file
 
-        public Characteristics flags;
+        public Flags flags;
         public Alignment dataAlignment;
 
         //flag fields
         [Flags]
-        public enum Characteristics : uint
+        public enum Flags : uint
         {
             IMAGE_SCN_CNT_CODE = 0x00000020,  	            //The section contains executable code.
             IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040, 	//The section contains initialized data.
@@ -63,10 +63,14 @@ namespace Origami.Win32
             IMAGE_SCN_MEM_WRITE = 0x80000000                //The section can be written to. 
         }
 
+        public const Flags TEXTFLAGS = Flags.IMAGE_SCN_CNT_CODE | Flags.IMAGE_SCN_MEM_EXECUTE | Flags.IMAGE_SCN_MEM_READ;
+        public const Flags DATAFLAGS = Flags.IMAGE_SCN_CNT_INITIALIZED_DATA | Flags.IMAGE_SCN_MEM_READ | Flags.IMAGE_SCN_MEM_WRITE;
+        public const Flags BSSFLAGS = Flags.IMAGE_SCN_CNT_UNINITIALIZED_DATA | Flags.IMAGE_SCN_MEM_READ | Flags.IMAGE_SCN_MEM_WRITE;
+
         //Align data on a nnn-byte boundary. Valid only for object files.
         public enum Alignment
         {
-            IMAGE_SCN_ALIGN_1BYTES,
+            IMAGE_SCN_ALIGN_1BYTES = 1,
             IMAGE_SCN_ALIGN_2BYTES,
             IMAGE_SCN_ALIGN_4BYTES,
             IMAGE_SCN_ALIGN_8BYTES,
@@ -90,7 +94,7 @@ namespace Origami.Win32
         public List<Byte> data;
 
         //new section cons
-        public Section(String _name)
+        public Section(String _name, Flags _flags, Alignment _alignment)
         {
             secNum = 0;
             name = _name;
@@ -100,13 +104,18 @@ namespace Origami.Win32
             fileSize = 0;
             filePos = 0;
 
-            flags = 0;
-            dataAlignment = Alignment.IMAGE_SCN_ALIGN_1BYTES;
+            flags = _flags;
+            dataAlignment = _alignment;
 
             relocations = new List<CoffRelocation>();
             linenumbers = new List<CoffLineNumber>();
 
             data = new List<byte>();            
+        }
+
+        public Section(String name)
+            : this(name, 0, Alignment.IMAGE_SCN_ALIGN_1BYTES)
+        {
         }
 
         //- reading in ----------------------------------------------------------------
@@ -116,9 +125,11 @@ namespace Origami.Win32
             data.Clear();
         }
 
-        public void addData(List<Byte> bytes)
+        public int addData(List<Byte> bytes)
         {
-            data.AddRange(bytes);            
+            int addr = data.Count;
+            data.AddRange(bytes);
+            return addr;
         }
 
         //- reading in ----------------------------------------------------------------
@@ -146,7 +157,7 @@ namespace Origami.Win32
             uint flagval = source.getFour();
             section.dataAlignment = (Alignment)((flagval >> 20) % 0x10);
             flagval &= ~((uint)0x00f00000);
-            section.flags = (Characteristics)flagval;
+            section.flags = (Flags)flagval;
 
             //load section data - read in all the bytes that will be loaded into mem (memsize)
             //and skip the remaining section bytes (filesize) to pad out the data to a file boundary
@@ -169,8 +180,8 @@ namespace Origami.Win32
             //line numbers are deprecated, we don't write them
             outfile.putFour(relocTblPos);
             outfile.putFour(0);
-            outfile.putFour((uint)relocations.Count);
-            outfile.putFour(0);
+            outfile.putTwo((uint)relocations.Count);
+            outfile.putTwo(0);
 
             uint flagval = (uint)flags;
             flagval = flagval | ((uint)dataAlignment << 20);

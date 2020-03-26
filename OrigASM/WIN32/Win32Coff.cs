@@ -196,11 +196,8 @@ namespace Origami.Win32
                     sections[i].fileSize = (uint)(sections[i].data.Count);
                     filepos += sections[i].fileSize;
                     uint relocsize = (uint)(sections[i].relocations.Count * 0x0a);
-                    if (relocsize > 0)
-                    {
-                        sections[i].relocTblPos = filepos;
-                        filepos += relocsize;
-                    }
+                    sections[i].relocTblPos = filepos;
+                    filepos += relocsize;
                 }
             }
 
@@ -235,10 +232,11 @@ namespace Origami.Win32
             return sec;
         }
 
-        public Section addSection(String name)
+        public Section addSection(String name, Section.Flags flags, Section.Alignment align)
         {
-            Section sec = new Section(name);
+            Section sec = new Section(name, flags, align);
             sections.Add(sec);
+            sec.secNum = sections.Count;
             secNames[name] = sec;
             return sec;
         }
@@ -253,73 +251,100 @@ namespace Origami.Win32
             return sym;
         }
 
-        public CoffSymbol addSymbol(String name, uint val, int num, uint type, uint storage, uint aux)
+        public CoffSymbol addSymbol(String name, uint val, int num, uint type, CoffStorageClass storage, uint aux)
         {
-            CoffSymbol sym = new CoffSymbol(name, val, num, type, storage, aux);
+            int namepos = -1;
+            if (name.Length > 8)
+            {
+                namepos = addString(name);
+                name = "";
+            }
+            CoffSymbol sym = new CoffSymbol(name, namepos, val, num, type, storage, aux);
             symbolTbl.Add(sym);
             symNames[name] = sym;
             return sym;
         }
 
-        public int addString(string str)
+        public String findString(int idx)
         {
-            stringTbl.Add(strTblIdx, str);
-            strTblIdx += (str.Length + 1);
-            return strTblIdx;
+            String s = null;
+            if (stringTbl.ContainsKey(idx))
+            {
+                s = stringTbl[idx];
+            }
+            return s;
         }
 
+        public int addString(string str)
+        {
+            int strpos = strTblIdx;
+            stringTbl[strTblIdx] = str;
+            strTblIdx += (str.Length + 1);
+            return strpos;
+        }
     }
 
     //- obj sym table ------------------------------------------------------------
 
     public class CoffSymbol
     {
-        String name;
+        String name;        //the symbol name string if 8 chars or less
+        int namePos;        //or its pos in the string tbl (-1 otherwise)
         uint value;
-        uint sectionNum;
+        int sectionNum;
         uint type;
-        uint storageClass;
+        CoffStorageClass storageClass;
         uint auxSymbolCount;
 
-        public CoffSymbol(String _name, uint _val, int _secnum, uint _type, uint _storage, uint _aux)
+        public CoffSymbol(String _name, int _namePos, uint _val, int _secnum, uint _type, CoffStorageClass _storage, uint _aux)
         {
             name = _name;
+            namePos = _namePos;
             value = _val;
-            sectionNum = (uint)_secnum;
+            sectionNum = _secnum;
             type = _type;
             storageClass = _storage;
             auxSymbolCount = _aux;
         }
 
-        internal void writeSymbol(OutputFile outfile)
+        public void writeSymbol(OutputFile outfile)
         {
-            //kludge for testing purposes
-            if (name.Equals("alongstring"))
+            if (namePos == -1)
+            {
+                outfile.putFixedString(name, 8);
+            }
+            else
             {
                 outfile.putFour(0);
-                outfile.putFour(0x4);
+                outfile.putFour((uint)namePos);
             }
-            else if (name.Equals("alongerstring"))
-            {
-                outfile.putFour(0);
-                outfile.putFour(0x13);
-            }
-            else outfile.putFixedString(name, 8);
             outfile.putFour(value);
-            outfile.putTwo(sectionNum);
+            uint sn = (uint)((sectionNum < 0) ? 0x10000 + sectionNum : sectionNum);
+            outfile.putTwo(sn);
             outfile.putTwo(type);
-            outfile.putOne(storageClass);
+            outfile.putOne((uint)storageClass);
             outfile.putOne(auxSymbolCount);
         }
     }
 
-    //- error handling ------------------------------------------------------------
+    //- error handling --------------------------------------------------------
 
-    class Win32ReadException : Exception
+    public class Win32ReadException : Exception
     {
         public Win32ReadException(string message)
             : base(message)
         {
         }
+    }
+
+    //-------------------------------------------------------------------------
+
+    //there are others, but these are the only ones Microsoft uses currently
+    public enum CoffStorageClass
+    {
+        IMAGE_SYM_CLASS_EXTERNAL = 2,
+        IMAGE_SYM_CLASS_STATIC = 3,
+        IMAGE_SYM_CLASS_FUNCTION = 101,
+        IMAGE_SYM_CLASS_FILE = 103
     }
 }
