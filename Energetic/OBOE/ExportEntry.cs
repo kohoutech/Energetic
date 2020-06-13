@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------------------------------------
-Kohoutech Asm32 Library
+Kohoutech OBOE Library
 Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
@@ -22,54 +22,50 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-//directives for the assembler
+using Kohoutech.Binary;
 
-namespace Kohoutech.Asm32
+namespace Kohoutech.OBOE
 {
-    public class Directive : Instruction
+    public class ExportEntry
     {
-        public DirectiveType type;
+        public string name;
+        public uint addr;
 
-        //all the directives that assembler recognizes
-        public static HashSet<String> names;
-
-        static Directive()
+        public ExportEntry(string _name, uint _addr)
         {
-            names = new HashSet<string>();
+            int spidx = _name.IndexOf(' ');
+            if (spidx != -1)
+            {
+                _name = _name.Substring(0, spidx);
+            }
 
-            names.Add("SECTION");
-            names.Add("PUBLIC");
-        }
-    }
-
-    public class SectionDir : Directive
-    {
-        public String name;
-
-        public SectionDir(String _name)
-        {
-            type = DirectiveType.SECTION;
             name = _name;
+            addr = _addr;
         }
-    }
 
-    public class PublicDir : Directive
-    {
-        public Symbol sym;
-
-        public PublicDir(Symbol _sym)
+        public static ExportEntry loadFromFile(BinaryIn infile)
         {
-            type = DirectiveType.PUBLIC;
-            sym = _sym;
+            string name = infile.getAsciiZString();
+            uint addr = infile.getFour();
+            ExportEntry exp = new ExportEntry(name, addr);
+            return exp;
+        }
+
+        public void writeToFile(BinaryOut modfile)
+        {
+            modfile.putString(name);
+            modfile.putFour((uint)addr);
+        }
+
+        public override string ToString()
+        {
+            return String.Format("{0}: {1}", addr.ToString("X4"), name);
+        }
+
+        internal static int sortByAddress(ExportEntry x, ExportEntry y)
+        {
+            return x.addr.CompareTo(y.addr);
         }
     }
-
-    public enum DirectiveType
-    {
-        SECTION,
-        PUBLIC
-    }
-
-    //-------------------------------------------------------------------------
 
 }

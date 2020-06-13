@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------------------------------------
-Kohoutech Asm32 Library
+Energetic - the Energetic Assembler
 Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
@@ -22,31 +22,56 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-//pseudo instructions for the assembler
+using Kohoutech.Asm32;
 
-namespace Kohoutech.Asm32
+//directives for the assembler
+
+namespace Energetic.Assemble
 {
-    public class PseudoOp : Instruction
+    public class Directive : Instruction
     {
-        public PseudoOpType type;
-    }
+        public DirectiveType type;
 
-    public class DataDefinition : PseudoOp
-    {
-        public int size;
-        public Operand val;
+        //all the directives that assembler recognizes
+        public static HashSet<String> names;
 
-        public DataDefinition(int _size, Operand _val)
+        static Directive()
         {
-            type = PseudoOpType.DATADEF;
-            size = _size;
-            val = _val;
+            names = new HashSet<string>();
+
+            names.Add("SECTION");
+            names.Add("PUBLIC");
         }
     }
 
-    public enum PseudoOpType
+    public class SectionDir : Directive
     {
-        DATADEF
+        public String name;
+
+        public SectionDir(String _name)
+        {
+            type = DirectiveType.SECTION;
+            name = _name;
+        }
     }
+
+    public class PublicDir : Directive
+    {
+        public Symbol sym;
+
+        public PublicDir(Symbol _sym)
+        {
+            type = DirectiveType.PUBLIC;
+            sym = _sym;
+        }
+    }
+
+    public enum DirectiveType
+    {
+        SECTION,
+        PUBLIC
+    }
+
+    //-------------------------------------------------------------------------
 
 }

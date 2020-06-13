@@ -31,21 +31,21 @@ namespace Energetic.Assemble
     {
         public iFeedback master;
         Assembly assembly;
-        Win32Coff objfile;
+        Oboe oboe;
         Section curSection;
 
         public Assembler(iFeedback _master)
         {
             master = _master;
 
-            objfile = null;
+            oboe = null;
             curSection = null;
         }
 
-        public Win32Coff assemble(Assembly _assembly)
+        public Oboe assemble(Assembly _assembly)
         {
             assembly = _assembly;
-            objfile = new Win32Coff();
+            oboe = new Oboe();
 
             foreach (Instruction insn in assembly.insns)
             {
@@ -65,7 +65,7 @@ namespace Energetic.Assemble
 
             finishUp();
 
-            return objfile;
+            return oboe;
         }
 
         //- directives --------------------------------------------------------
@@ -82,21 +82,21 @@ namespace Energetic.Assemble
                 case DirectiveType.SECTION:
 
                     String secName = ((SectionDir)directive).name;
-                    Section sec = objfile.findSection(secName);
+                    Section sec = oboe.findSection(secName);
                     if (sec == null)
                     {
-                        Section.Flags flags = Section.TEXTFLAGS;
-                        Section.Alignment align = Section.Alignment.IMAGE_SCN_ALIGN_16BYTES;
-                        if (secName.Equals(".data")) {
-                            flags = Section.DATAFLAGS;
-                            align = Section.Alignment.IMAGE_SCN_ALIGN_4BYTES;
-                        }
-                        else if (secName.Equals(".bss"))
-                        {
-                            flags = Section.BSSFLAGS;
-                            align = Section.Alignment.IMAGE_SCN_ALIGN_4BYTES;
-                        }
-                        sec = objfile.addSection(secName, flags, align);
+                        //Section.Flags flags = Section.TEXTFLAGS;
+                        //Section.Alignment align = Section.Alignment.IMAGE_SCN_ALIGN_16BYTES;
+                        //if (secName.Equals(".data")) {
+                        //    flags = Section.DATAFLAGS;
+                        //    align = Section.Alignment.IMAGE_SCN_ALIGN_4BYTES;
+                        //}
+                        //else if (secName.Equals(".bss"))
+                        //{
+                        //    flags = Section.BSSFLAGS;
+                        //    align = Section.Alignment.IMAGE_SCN_ALIGN_4BYTES;
+                        //}
+                        //sec = oboe.addSection(secName, flags, align);
                     }
                     curSection = sec;
                     break;
@@ -114,9 +114,9 @@ namespace Energetic.Assemble
 
         public void handleInstruction(Instruction insn)
         {
-            uint addr = (uint)curSection.addData(insn.getBytes());
-            insn.addr = addr;
-            insn.sec = curSection.secNum;
+            //uint addr = (uint)curSection.addData(insn.getBytes());
+            //insn.addr = addr;
+            //insn.sec = curSection.secNum;
         }
 
         public void finishUp()
@@ -126,10 +126,9 @@ namespace Energetic.Assemble
             {
                 switch (sym.type)
                 {
-                    case Symbol.SymType.PUBLIC:
-                        objfile.addSymbol(sym.name, sym.def.addr, sym.def.sec, 0, CoffStorageClass.IMAGE_SYM_CLASS_EXTERNAL, 0);
-
-                        break;
+                    //case Symbol.SymType.PUBLIC:
+                    //    objfile.addSymbol(sym.name, sym.def.addr, sym.def.sec, 0, CoffStorageClass.IMAGE_SYM_CLASS_EXTERNAL, 0);
+                    //    break;
 
                     default:
                         break;

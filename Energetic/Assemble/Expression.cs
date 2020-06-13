@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------------------------------------
-Origami Win32 Library
+Energetic - the Energetic Assembler
 Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
@@ -22,9 +22,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Origami.Win32
+using Kohoutech.Asm32;
+
+//these will eventually be merged with the classes in <Operand.cs>
+
+namespace Energetic.Assemble
 {
-    public class ImportTable
+    public class IntConst : Operand
     {
+        public int val;
+
+        public IntConst(int _val)
+        {
+            val = _val;
+        }
+    }
+
+    public class Reference : Operand
+    {
+        public Operand reff;
+
+        public Reference(Operand _reff)
+        {
+            reff = _reff;
+        }
     }
 }

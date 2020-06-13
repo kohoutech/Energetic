@@ -33,8 +33,8 @@ namespace Energetic
     {
         static void Main(string[] args)
         {
-            Energetic origASM = new Energetic();
-            origASM.assembleIt(args);
+            Energetic energetic = new Energetic();
+            energetic.assembleIt(args);
         }
 
         public Energetic()
@@ -54,8 +54,8 @@ namespace Energetic
 
             Assembly assembly = parser.parseFile(srcname);        //front end
 
-            Win32Coff objfile = assembler.assemble(assembly);
-            objfile.writeToFile(outname);
+            Oboe oboe = assembler.assemble(assembly);
+            oboe.writeOboeFile(outname);
         }
 
         //- assembler feedback ------------------------------------------------

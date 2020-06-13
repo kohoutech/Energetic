@@ -59,9 +59,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ASM32\Assembly.cs" />
-    <Compile Include="ASM32\Directive.cs" />
-    <Compile Include="ASM32\Expression.cs" />
+    <Compile Include="Assemble\Assembly.cs" />
+    <Compile Include="Assemble\Directive.cs" />
+    <Compile Include="Assemble\Expression.cs" />
     <Compile Include="ASM32\i32Disasm.cs" />
     <Compile Include="ASM32\Instruction.cs" />
     <Compile Include="ASM32\Instruction87.cs" />
@@ -71,7 +71,7 @@
     <Compile Include="ASM32\InstructionSSE2.cs" />
     <Compile Include="ASM32\InstructionSys.cs" />
     <Compile Include="ASM32\Operand.cs" />
-    <Compile Include="ASM32\PseudoOp.cs" />
+    <Compile Include="Assemble\PseudoOp.cs" />
     <Compile Include="ASM32\Register.cs" />
     <Compile Include="Assemble\Assembler.cs" />
     <Compile Include="iFeedback.cs" />
@@ -80,8 +80,8 @@
     <Compile Include="OBOE\ImportEntry.cs" />
     <Compile Include="OBOE\Oboe.cs" />
     <Compile Include="OBOE\OboeBlock.cs" />
-    <Compile Include="OBOE\ResourceTable.cs" />
     <Compile Include="OBOE\Section.cs" />
+    <Compile Include="OBOE\Win32\CoffResource.cs" />
     <Compile Include="OBOE\Win32\CoffSection.cs" />
     <Compile Include="OBOE\Win32\Win32Exe.cs" />
     <Compile Include="OBOE\Win32\Win32Obj.cs" />

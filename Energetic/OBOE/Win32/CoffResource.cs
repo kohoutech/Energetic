@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-Origami Win32 Library
+Kohoutech OBOE Library
 Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
@@ -24,12 +24,13 @@ using System.Text;
 using System.Drawing;
 using System.IO;
 
+using Kohoutech.Binary;
 
 //https://en.wikibooks.org/wiki/X86_Disassembly/Windows_Executable_Files
 //https://msdn.microsoft.com/en-us/library/windows/desktop/ms680547(v=vs.85).aspx#the_.rsrc_section
 //https://msdn.microsoft.com/en-us/library/ms648009(v=vs.85).aspx
 
-namespace Origami.Win32
+namespace Kohoutech.OBOE
 {
     public class ResourceTable
     {
@@ -95,7 +96,7 @@ namespace Origami.Win32
             cursorItems = new List<ResData>();
             iconItems = new List<ResData>();
 
-            SourceFile source = new SourceFile(data);   //source file pts to resource table's raw data buf
+            BinaryIn source = new BinaryIn(data);   //source file pts to resource table's raw data buf
             parseResourceDirectory(source, 0);          //start on level 0
 
             parseCursorGroups();        //having stored icon & cursor resource data during the parse
@@ -107,7 +108,7 @@ namespace Origami.Win32
         //level 1 : resource type
         //level 2 : resource name str/id num
         //level 3 : language (aka code page)
-        private void parseResourceDirectory(SourceFile source, int level)
+        private void parseResourceDirectory(BinaryIn source, int level)
         {
             //parse IMAGE_RESOURCE_DIRECTORY
             uint characteristics = source.getFour();    //unused
@@ -141,7 +142,7 @@ namespace Origami.Win32
             }
         }
 
-        private String getResourceName(SourceFile source, uint pos)
+        private String getResourceName(BinaryIn source, uint pos)
         {
             uint curPos = source.getPos();
             pos = (pos & 0x7FFFFFFF);
@@ -161,7 +162,7 @@ namespace Origami.Win32
         }
 
         //leaf node of resource directory tree, this rec points to actual data
-        private void parseResourceData(SourceFile source)
+        private void parseResourceData(BinaryIn source)
         {
             uint datapos = source.getFour();
             uint datasize = source.getFour();
@@ -863,6 +864,11 @@ namespace Origami.Win32
             List<String> result = null;
             return result;
         }
+
+        internal CoffSection createSection()
+        {
+            throw new NotImplementedException();
+        }
     }
 
 //-----------------------------------------------------------------------------
@@ -1055,7 +1061,7 @@ namespace Origami.Win32
         public static ResCursorGroupData parseData(byte[] resdata)
         {
             ResCursorGroupData cgdata = new ResCursorGroupData();
-            SourceFile src = new SourceFile(resdata);
+            BinaryIn src = new BinaryIn(resdata);
             return cgdata;
         }
     }
@@ -1127,7 +1133,7 @@ namespace Origami.Win32
         public static ResImageGroupData parseData(byte[] resdata)
         {
             ResImageGroupData igdata = new ResImageGroupData();
-            SourceFile src = new SourceFile(resdata);
+            BinaryIn src = new BinaryIn(resdata);
             uint res = src.getTwo();                
             uint type = src.getTwo();
             int count = (int)src.getTwo();
@@ -1152,7 +1158,7 @@ namespace Origami.Win32
         public uint nID;                  // the ID
         public Icon image;
 
-        public static ResImageGroupDataEntry parseData(SourceFile src)
+        public static ResImageGroupDataEntry parseData(BinaryIn src)
         {
             ResImageGroupDataEntry cgdata = new ResImageGroupDataEntry();
             cgdata.bWidth = src.getOne();

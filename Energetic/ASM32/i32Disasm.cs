@@ -98,7 +98,7 @@ namespace Kohoutech.Asm32
             codeaddr = codebase + srcpos;
         }
 
-        //this will disassemble the bytes in the sourc ebuf at the current pos into an intruction object
+        //this will disassemble the bytes in the source buf at the current pos into an intruction object
         //and advance the current pos to the next bytes following this instruction
         //if we read past the end of the source buf in disassembling bytes, return null
         //subsequent calls to <getInstr> will also return null (until the source pos is reset)

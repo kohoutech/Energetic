@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------------------------------------
-Origami Win32 Library
+Kohoutech Binary Library
 Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
@@ -23,12 +23,14 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
-namespace Origami.Win32
+namespace Kohoutech.Binary
 {
 
-    //- reading in ----------------------------------------------------------------
+    //---------------------------------------------------------------------
+    // READING IN
+    //---------------------------------------------------------------------
 
-    public class SourceFile
+    public class BinaryIn
     {
         String filename;
         byte[] srcbuf;
@@ -36,16 +38,22 @@ namespace Origami.Win32
         uint srcpos;
 
         //for reading fields from a disk file
-        public SourceFile(String _filename)
+        public BinaryIn(String _filename)
         {
             filename = _filename;
-            srcbuf = File.ReadAllBytes(filename);
+            try
+            {
+                srcbuf = File.ReadAllBytes(filename);
+            }
+            catch (Exception e)
+            {
+                throw new BinaryReadException("error reading binary file " + filename);
+            }
             srclen = (uint)srcbuf.Length;
             srcpos = 0;
         }
 
-        //for reading fields from a data buf
-        public SourceFile(byte[] data)
+        public BinaryIn(byte[] data)
         {
             filename = null;
             srcbuf = data;
@@ -58,8 +66,17 @@ namespace Origami.Win32
             return srcpos;
         }
 
+        public void checkData(uint len)
+        {
+            if (srcpos + len >= srclen)
+            {
+                throw new BinaryReadException("error reading binary data");
+            }
+        }
+
         public byte[] getRange(uint len)
         {
+            checkData(len);
             byte[] result = new byte[len];
             Array.Copy(srcbuf, srcpos, result, 0, len);
             srcpos += len;
@@ -68,13 +85,16 @@ namespace Origami.Win32
 
         public byte[] getRange(uint ofs, uint len)
         {
+            checkData(ofs + len);
             byte[] result = new byte[len];
             Array.Copy(srcbuf, ofs, result, 0, len);
             return result;
         }
 
+        //little endian unsigned int values
         public uint getOne()
         {
+            checkData(1);
             byte a = srcbuf[srcpos++];
             uint result = (uint)(a);
             return result;
@@ -82,6 +102,7 @@ namespace Origami.Win32
 
         public uint getTwo()
         {
+            checkData(2);
             byte b = srcbuf[srcpos++];
             byte a = srcbuf[srcpos++];
             uint result = (uint)a * 256 + b;
@@ -90,6 +111,7 @@ namespace Origami.Win32
 
         public uint getFour()
         {
+            checkData(4);
             byte d = srcbuf[srcpos++];
             byte c = srcbuf[srcpos++];
             byte b = srcbuf[srcpos++];
@@ -101,34 +123,63 @@ namespace Origami.Win32
         }
 
         //fixed len string
-        public String getAsciiString(int width)
+        public String getAsciiString(uint width)
         {
+            checkData(width);
             String result = "";
             for (int i = 0; i < width; i++)
             {
                 byte a = srcbuf[srcpos++];
-                if ((a >= 0x20) && (a <= 0x7E))
-                {
-                    result += (char)a;
-                }
+                result += (char)a;
+            }
+            return result;
+        }
+
+        //C style string
+        public String getAsciiZString()
+        {
+            String result = "";
+            checkData(1);
+            byte a = srcbuf[srcpos++];
+            while (a != '\0')
+            {
+                result = result + (char)a;
+                checkData(1);
+                a = srcbuf[srcpos++];
             }
             return result;
         }
 
         public void skip(uint delta)
         {
+            checkData(1);
             srcpos += delta;
         }
 
         public void seek(uint pos)
         {
+            if (pos > srcpos)
+            {
+                checkData(pos - srcpos);
+            }
             srcpos = pos;
         }
     }
 
-    //- writing out ---------------------------------------------------------------
+    public class BinaryReadException : Exception
+    {
+        public BinaryReadException(string message)
+            : base(message)
+        {
+        }
+    }
 
-    public class OutputFile
+
+    //---------------------------------------------------------------------
+    // WRITING OUT
+    //---------------------------------------------------------------------
+
+    public class BinaryOut
     {
         static uint INITIAL_SIZE = 0x200;
         static uint SIZE_DELTA = 0x2000;
@@ -139,13 +190,18 @@ namespace Origami.Win32
         uint outpos;
         uint maxlen;
 
+        //for write fields to a data buf
+        public BinaryOut() : this(null)
+        {
+        }
+
         //for writing fields to a disk file
-        public OutputFile(String _filename)
+        public BinaryOut(String _filename)
             : this(_filename, INITIAL_SIZE)
         {
         }
 
-        public OutputFile(String _filename, uint filelen)
+        public BinaryOut(String _filename, uint filelen)
         {
             filename = _filename;
             outlen = filelen;
@@ -159,6 +215,7 @@ namespace Origami.Win32
             return outpos;
         }
 
+        //grow the outbuf as needed
         public void checkSpace(uint size)
         {
             uint needed = outpos + size;
@@ -168,8 +225,13 @@ namespace Origami.Win32
                 outbuf.CopyTo(temp, 0);
                 outbuf = temp;
             }
+            if (needed > maxlen)
+            {
+                maxlen = needed;
+            }
         }
 
+        //little endian unsigned int values
         public void putOne(uint val)
         {
             checkSpace(1);
@@ -238,6 +300,7 @@ namespace Origami.Win32
             outpos += len;
         }
 
+        //padding out data fields
         public void putZeros(uint len)
         {
             checkSpace(len);
@@ -247,23 +310,37 @@ namespace Origami.Win32
             }
         }
 
+        public void skip(uint delta)
+        {
+            uint newpos = outpos + delta;
+            seek(newpos);
+        }
+
         public void seek(uint pos)
         {
-            checkSpace(pos - outpos);
+            if (pos > outpos)                   //if we are seeking beyond the cur pos in the output buf
+            {
+                checkSpace(pos - outpos);
+            }
             outpos = pos;
+        }
+
+        public byte[] getData()
+        {
+            //remove unused space at end of file
+            //any padding needed at end of file should be already handled by caller
+            if (maxlen < outbuf.Length)
+            {
+                byte[] newbuf = new byte[maxlen];
+                Array.Copy(outbuf, newbuf, maxlen);
+                outbuf = newbuf;
+            }
+            return outbuf;
         }
 
         public void writeOut()
         {
-            //remove unused space at end of file
-            //any padding needed at end of file should be handled by caller
-            if (outpos < outbuf.Length)
-            {
-                byte[] newbuf = new byte[outpos];
-                Array.Copy(outbuf, newbuf, outpos);
-                outbuf = newbuf;
-            }
-            File.WriteAllBytes(filename, outbuf);
+            File.WriteAllBytes(filename, getData());
         }
     }
 }

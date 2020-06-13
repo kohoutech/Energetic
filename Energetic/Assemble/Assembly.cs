@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------------------------------------
-Kohoutech Asm32 Library
+Energetic - the Energetic Assembler
 Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
@@ -23,7 +23,9 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
-namespace Kohoutech.Asm32
+using Kohoutech.Asm32;
+
+namespace Energetic.Assemble
 {
     public class Assembly
     {

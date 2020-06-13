@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 
 using Energetic.Scan;
+using Energetic.Assemble;
 using Kohoutech.Asm32;
 
 namespace Energetic.Parse

@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------------------------------------
-Kohoutech Asm32 Library
+Energetic - the Energetic Assembler
 Copyright (C) 1998-2020  George E Greaney
 
 This program is free software; you can redistribute it and/or
@@ -22,27 +22,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-//these will eventually be merged with the classes in <Operand.cs>
+using Kohoutech.Asm32;
 
-namespace Kohoutech.Asm32
+//pseudo instructions for the assembler
+
+namespace Energetic.Assemble
 {
-    public class IntConst : Operand
+    public class PseudoOp : Instruction
     {
-        public int val;
+        public PseudoOpType type;
+    }
 
-        public IntConst(int _val)
+    public class DataDefinition : PseudoOp
+    {
+        public int size;
+        public Operand val;
+
+        public DataDefinition(int _size, Operand _val)
         {
+            type = PseudoOpType.DATADEF;
+            size = _size;
             val = _val;
         }
     }
 
-    public class Reference : Operand
+    public enum PseudoOpType
     {
-        public Operand reff;
-
-        public Reference(Operand _reff)
-        {
-            reff = _reff;
-        }
+        DATADEF
     }
+
 }
